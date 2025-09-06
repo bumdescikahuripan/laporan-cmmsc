@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUMDES - Sistem Manajemen Keuangan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .android-shadow {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .input-focus:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .success-animation {
+            animation: successPulse 0.6s ease-out;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .tab-active {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+        }
+
+        .tab-inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .tab-inactive:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+        <div class="bg-white rounded-xl android-shadow p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">BUMDES Keuangan</h1>
+                <p class="text-gray-600">Sistem Manajemen Keuangan</p>
+            </div>
+
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="loginUsername" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus" placeholder="Masukkan username" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus" placeholder="Masukkan password" required>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                    Masuk
+                </button>
+            </form>
+
+            <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-medium text-blue-900 mb-2">Demo Akun:</h3>
+                <div class="text-sm text-blue-700 space-y-1">
+                    <p><strong>Admin:</strong> admin / admin123</p>
+                    <p><strong>Kepala Unit Sembako:</strong> sembako / sembako123</p>
+                    <p><strong>Kepala Unit Simpan Pinjam:</strong> simpan / simpan123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App (Hidden initially) -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 android-shadow">
+            <div class="px-4 py-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-white text-lg font-semibold">BUMDES Keuangan</h1>
+                            <p class="text-blue-100 text-sm">
+                                <span id="userRole" class="font-medium"></span> - <span id="userName"></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleExportMenu()" class="text-white hover:text-blue-200 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </button>
+                        <button id="adminPanelBtn" onclick="toggleAdminPanel()" class="text-white hover:text-blue-200 transition-colors hidden">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="logout()" class="text-white hover:text-blue-200 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Export Menu -->
+    <div id="exportMenu" class="hidden px-4 py-4 bg-purple-50 border-b border-purple-200">
+        <div class="bg-white rounded-lg p-4 android-shadow">
+            <h3 class="font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export Laporan Keuangan
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Filter Options -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Filter Laporan</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Unit Usaha</label>
+                            <select id="exportBusinessUnit" class="w-full px-2 py-1 border rounded text-sm">
+                                <option value="">Semua Unit Usaha</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Periode</label>
+                            <select id="exportPeriod" class="w-full px-2 py-1 border rounded text-sm">
+                                <option value="all">Semua Periode</option>
+                                <option value="thisMonth">Bulan Ini</option>
+                                <option value="lastMonth">Bulan Lalu</option>
+                                <option value="thisYear">Tahun Ini</option>
+                                <option value="custom">Periode Kustom</option>
+                            </select>
+                        </div>
+                        <div id="customPeriod" class="hidden space-y-2">
+                            <input type="date" id="exportStartDate" class="w-full px-2 py-1 border rounded text-sm">
+                            <input type="date" id="exportEndDate" class="w-full px-2 py-1 border rounded text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-3">Jenis Laporan</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="exportTransactions" checked class="mr-2">
+                            <span class="text-sm">Transaksi Keuangan</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="exportSummary" checked class="mr-2">
+                            <span class="text-sm">Ringkasan Keuangan</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="exportBusinessUnits" class="mr-2">
+                            <span class="text-sm">Data Unit Usaha</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- PDF Export -->
+                <button onclick="exportToPDF()" class="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3"></path>
+                    </svg>
+                    Export ke PDF
+                </button>
+
+                <!-- Excel Export -->
+                <button onclick="exportToExcel()" class="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3"></path>
+                    </svg>
+                    Export ke Excel
+                </button>
+            </div>
+
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div class="flex items-start">
+                    <svg class="w-4 h-4 text-blue-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="text-sm text-blue-700">
+                        <p class="font-medium mb-1">Tips Export:</p>
+                        <ul class="text-xs space-y-1">
+                            <li>• PDF untuk laporan formal dan presentasi</li>
+                            <li>• Excel untuk analisis data lebih lanjut</li>
+                            <li>• Gunakan filter untuk laporan spesifik</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden px-4 py-4 bg-yellow-50 border-b border-yellow-200">
+        <div class="bg-white rounded-lg p-4 android-shadow">
+            <h3 class="font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Kelola Unit Usaha BUMDES
+            </h3>
+            
+            <!-- Add Business Unit Form -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 class="font-medium text-blue-900 mb-3">Tambah Unit Usaha Baru</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input type="text" id="newUnitName" placeholder="Nama Unit Usaha" class="px-3 py-2 border rounded-lg text-sm">
+                    <input type="text" id="newUnitDescription" placeholder="Deskripsi" class="px-3 py-2 border rounded-lg text-sm">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <input type="text" id="newUnitManager" placeholder="Penanggung Jawab" class="px-3 py-2 border rounded-lg text-sm">
+                    <input type="number" id="newUnitBudget" placeholder="Anggaran Awal" class="px-3 py-2 border rounded-lg text-sm">
+                    <select id="newUnitStatus" class="px-3 py-2 border rounded-lg text-sm">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Tidak Aktif">Tidak Aktif</option>
+                        <option value="Perencanaan">Perencanaan</option>
+                    </select>
+                </div>
+                <button onclick="addBusinessUnit()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Tambah Unit Usaha
+                </button>
+            </div>
+
+            <!-- Business Units List -->
+            <div>
+                <h4 class="font-medium text-gray-900 mb-3">Daftar Unit Usaha</h4>
+                <div id="businessUnitsList" class="space-y-3">
+                    <!-- Business units will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="px-4 py-6">
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-xl android-shadow mb-6 overflow-hidden">
+            <div class="flex">
+                <button onclick="switchTab('transactions')" id="transactionsTab" class="flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-active">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                    Input Transaksi
+                </button>
+                <button onclick="switchTab('reports')" id="reportsTab" class="flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-inactive">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Laporan Keuangan
+                </button>
+                <button onclick="switchTab('dashboard')" id="dashboardTab" class="flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-inactive">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                    </svg>
+                    Dashboard
+                </button>
+            </div>
+        </div>
+
+        <!-- Transaction Input Tab -->
+        <div id="transactionsContent" class="space-y-6">
+            <!-- Transaction Form -->
+            <div class="bg-white rounded-xl android-shadow p-6 slide-up">
+                <div class="flex items-center space-x-2 mb-6">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                    <h2 class="text-xl font-semibold text-gray-900">Input Transaksi Keuangan</h2>
+                </div>
+
+                <form id="transactionForm" class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Transaction Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi *</label>
+                            <select id="transactionType" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" required onchange="updateTransactionForm()">
+                                <option value="">Pilih Jenis Transaksi</option>
+                                <option value="Pemasukan">Pemasukan</option>
+                                <option value="Pengeluaran">Pengeluaran</option>
+                            </select>
+                        </div>
+
+                        <!-- Business Unit -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Unit Usaha *</label>
+                            <select id="businessUnit" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" required>
+                                <option value="">Pilih Unit Usaha</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Amount -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp) *</label>
+                            <input type="number" id="amount" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="0" required min="0" oninput="formatAmount(this)">
+                        </div>
+
+                        <!-- Date -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Transaksi *</label>
+                            <input type="date" id="transactionDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" required>
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Kategori *</label>
+                        <select id="category" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" required>
+                            <option value="">Pilih Kategori</option>
+                        </select>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Deskripsi Transaksi *</label>
+                        <textarea id="description" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="Jelaskan detail transaksi..." required></textarea>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran</label>
+                        <select id="paymentMethod" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200">
+                            <option value="Tunai">Tunai</option>
+                            <option value="Transfer Bank">Transfer Bank</option>
+                            <option value="QRIS">QRIS</option>
+                            <option value="E-Wallet">E-Wallet</option>
+                            <option value="Cek/Giro">Cek/Giro</option>
+                        </select>
+                    </div>
+
+                    <!-- Reference Number -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nomor Referensi</label>
+                        <input type="text" id="referenceNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus transition-all duration-200" placeholder="Nomor bukti/referensi (opsional)">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 android-shadow">
+                        <span id="submitText">Simpan Transaksi</span>
+                        <svg id="loadingIcon" class="hidden animate-spin -mr-1 ml-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="bg-white rounded-xl android-shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Transaksi Terbaru</h3>
+                    <span id="transactionCount" class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">0 Transaksi</span>
+                </div>
+                <div id="recentTransactions" class="space-y-3">
+                    <!-- Recent transactions will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reportsContent" class="hidden space-y-6">
+            <!-- Financial Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Total Pemasukan</p>
+                            <p id="totalIncome" class="text-xl font-semibold text-green-600">Rp 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-full">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Total Pengeluaran</p>
+                            <p id="totalExpense" class="text-xl font-semibold text-red-600">Rp 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Saldo</p>
+                            <p id="balance" class="text-xl font-semibold text-blue-600">Rp 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-full">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Unit Usaha</p>
+                            <p id="totalBusinessUnits" class="text-xl font-semibold text-purple-600">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Reports -->
+            <div class="bg-white rounded-xl android-shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Laporan Detail per Unit Usaha</h3>
+                <div id="businessUnitReports" class="space-y-4">
+                    <!-- Business unit reports will be populated here -->
+                </div>
+            </div>
+
+            <!-- All Transactions -->
+            <div class="bg-white rounded-xl android-shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Semua Transaksi</h3>
+                    <div class="flex space-x-2">
+                        <select id="filterBusinessUnit" class="px-3 py-1 border rounded text-sm" onchange="filterTransactions()">
+                            <option value="">Semua Unit</option>
+                        </select>
+                        <select id="filterType" class="px-3 py-1 border rounded text-sm" onchange="filterTransactions()">
+                            <option value="">Semua Jenis</option>
+                            <option value="Pemasukan">Pemasukan</option>
+                            <option value="Pengeluaran">Pengeluaran</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="allTransactions" class="space-y-3">
+                    <!-- All transactions will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardContent" class="hidden space-y-6">
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Transaksi Bulan Ini</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Pemasukan:</span>
+                            <span id="monthlyIncome" class="font-semibold text-green-600">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Pengeluaran:</span>
+                            <span id="monthlyExpense" class="font-semibold text-red-600">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between border-t pt-2">
+                            <span class="text-gray-900 font-medium">Saldo Bulan Ini:</span>
+                            <span id="monthlyBalance" class="font-semibold text-blue-600">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Unit Usaha Aktif</h3>
+                    <div id="activeBusinessUnits" class="space-y-2">
+                        <!-- Active business units will be populated here -->
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl android-shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h3>
+                    <div id="recentActivity" class="space-y-2 text-sm">
+                        <!-- Recent activity will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts placeholder -->
+            <div class="bg-white rounded-xl android-shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik Keuangan</h3>
+                <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <p>Grafik akan ditampilkan di sini</p>
+                        <p class="text-xs">Fitur visualisasi data keuangan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full success-animation">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Berhasil!</h3>
+                <p id="successMessage" class="text-gray-600 text-sm mb-4">Transaksi berhasil disimpan</p>
+                <button onclick="closeSuccessModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data
+        let transactions = JSON.parse(localStorage.getItem('bumdesTransactions')) || [];
+        let businessUnits = JSON.parse(localStorage.getItem('bumdesBusinessUnits')) || [
+            { 
+                id: 1, 
+                name: "Warung Sembako", 
+                description: "Penjualan kebutuhan sehari-hari", 
+                manager: "Ibu Sari", 
+                budget: 5000000, 
+                status: "Aktif",
+                createdDate: new Date().toLocaleDateString('id-ID')
+            },
+            { 
+                id: 2, 
+                name: "Simpan Pinjam", 
+                description: "Layanan keuangan mikro", 
+                manager: "Bapak Joko", 
+                budget: 10000000, 
+                status: "Aktif",
+                createdDate: new Date().toLocaleDateString('id-ID')
+            }
+        ];
+
+        // Categories for income and expense
+        const incomeCategories = [
+            "Penjualan Produk", "Jasa Layanan", "Bunga Simpan Pinjam", "Sewa Aset", 
+            "Hibah/Bantuan", "Keuntungan Investasi", "Lain-lain"
+        ];
+
+        const expenseCategories = [
+            "Pembelian Bahan Baku", "Gaji Karyawan", "Biaya Operasional", "Biaya Administrasi",
+            "Biaya Pemasaran", "Biaya Maintenance", "Pajak", "Lain-lain"
+        ];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBusinessUnits();
+            displayBusinessUnits();
+            updateFinancialSummary();
+            displayRecentTransactions();
+            displayAllTransactions();
+            displayBusinessUnitReports();
+            updateDashboard();
+            
+            // Set today's date
+            document.getElementById('transactionDate').valueAsDate = new Date();
+            
+            // Set up export period change handler
+            document.getElementById('exportPeriod').addEventListener('change', function() {
+                const customPeriod = document.getElementById('customPeriod');
+                if (this.value === 'custom') {
+                    customPeriod.classList.remove('hidden');
+                } else {
+                    customPeriod.classList.add('hidden');
+                }
+            });
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all content
+            document.getElementById('transactionsContent').classList.add('hidden');
+            document.getElementById('reportsContent').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.add('hidden');
+            
+            // Remove active class from all tabs
+            document.getElementById('transactionsTab').className = 'flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-inactive';
+            document.getElementById('reportsTab').className = 'flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-inactive';
+            document.getElementById('dashboardTab').className = 'flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-inactive';
+            
+            // Show selected content and activate tab
+            document.getElementById(tabName + 'Content').classList.remove('hidden');
+            document.getElementById(tabName + 'Tab').className = 'flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 tab-active';
+            
+            // Update data when switching to reports or dashboard
+            if (tabName === 'reports') {
+                updateFinancialSummary();
+                displayBusinessUnitReports();
+                displayAllTransactions();
+            } else if (tabName === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Panel toggle functions
+        function toggleExportMenu() {
+            const exportMenu = document.getElementById('exportMenu');
+            const adminPanel = document.getElementById('adminPanel');
+            
+            exportMenu.classList.toggle('hidden');
+            adminPanel.classList.add('hidden');
+            
+            if (!exportMenu.classList.contains('hidden')) {
+                loadExportBusinessUnits();
+            }
+        }
+
+        function toggleAdminPanel() {
+            const adminPanel = document.getElementById('adminPanel');
+            const exportMenu = document.getElementById('exportMenu');
+            
+            adminPanel.classList.toggle('hidden');
+            exportMenu.classList.add('hidden');
+        }
+
+        // Business Unit Management
+        function addBusinessUnit() {
+            const name = document.getElementById('newUnitName').value.trim();
+            const description = document.getElementById('newUnitDescription').value.trim();
+            const manager = document.getElementById('newUnitManager').value.trim();
+            const budget = parseInt(document.getElementById('newUnitBudget').value) || 0;
+            const status = document.getElementById('newUnitStatus').value;
+
+            if (!name || !description || !manager) {
+                alert('Mohon lengkapi nama unit usaha, deskripsi, dan penanggung jawab');
+                return;
+            }
+
+            const newUnit = {
+                id: Date.now(),
+                name: name,
+                description: description,
+                manager: manager,
+                budget: budget,
+                status: status,
+                createdDate: new Date().toLocaleDateString('id-ID')
+            };
+
+            businessUnits.push(newUnit);
+            localStorage.setItem('bumdesBusinessUnits', JSON.stringify(businessUnits));
+
+            // Clear form
+            document.getElementById('newUnitName').value = '';
+            document.getElementById('newUnitDescription').value = '';
+            document.getElementById('newUnitManager').value = '';
+            document.getElementById('newUnitBudget').value = '';
+            document.getElementById('newUnitStatus').value = 'Aktif';
+
+            // Refresh displays
+            loadBusinessUnits();
+            displayBusinessUnits();
+            updateFinancialSummary();
+            updateDashboard();
+
+            alert('Unit usaha berhasil ditambahkan!');
+        }
+
+        function deleteBusinessUnit(id) {
+            if (confirm('Yakin ingin menghapus unit usaha ini? Semua transaksi terkait akan tetap ada.')) {
+                businessUnits = businessUnits.filter(unit => unit.id !== id);
+                localStorage.setItem('bumdesBusinessUnits', JSON.stringify(businessUnits));
+                
+                loadBusinessUnits();
+                displayBusinessUnits();
+                updateFinancialSummary();
+                updateDashboard();
+            }
+        }
+
+        function editBusinessUnit(id) {
+            const unit = businessUnits.find(u => u.id === id);
+            if (unit) {
+                const newName = prompt('Nama Unit Usaha:', unit.name);
+                if (newName && newName.trim()) {
+                    unit.name = newName.trim();
+                    
+                    const newDescription = prompt('Deskripsi:', unit.description);
+                    if (newDescription && newDescription.trim()) {
+                        unit.description = newDescription.trim();
+                        
+                        const newManager = prompt('Penanggung Jawab:', unit.manager);
+                        if (newManager && newManager.trim()) {
+                            unit.manager = newManager.trim();
+                            
+                            localStorage.setItem('bumdesBusinessUnits', JSON.stringify(businessUnits));
+                            displayBusinessUnits();
+                            loadBusinessUnits();
+                        }
+                    }
+                }
+            }
+        }
+
+        function displayBusinessUnits() {
+            const businessUnitsList = document.getElementById('businessUnitsList');
+            
+            if (businessUnits.length === 0) {
+                businessUnitsList.innerHTML = '<p class="text-gray-500 text-sm">Belum ada unit usaha</p>';
+                return;
+            }
+
+            businessUnitsList.innerHTML = businessUnits.map(unit => {
+                const unitTransactions = transactions.filter(t => t.businessUnit === unit.name);
+                const totalIncome = unitTransactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+                const totalExpense = unitTransactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+                const balance = totalIncome - totalExpense;
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-900">${unit.name}</h4>
+                                <p class="text-sm text-gray-600">${unit.description}</p>
+                                <p class="text-sm text-gray-500">PJ: ${unit.manager}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block px-2 py-1 text-xs rounded-full ${
+                                    unit.status === 'Aktif' ? 'bg-green-100 text-green-800' :
+                                    unit.status === 'Tidak Aktif' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }">${unit.status}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4 text-sm mb-3">
+                            <div>
+                                <span class="text-gray-500">Anggaran:</span>
+                                <div class="font-medium">${formatCurrency(unit.budget)}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Pemasukan:</span>
+                                <div class="font-medium text-green-600">${formatCurrency(totalIncome)}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Saldo:</span>
+                                <div class="font-medium ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}">${formatCurrency(balance)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center text-xs text-gray-500">
+                            <span>Dibuat: ${unit.createdDate}</span>
+                            <div class="flex space-x-2">
+                                <button onclick="editBusinessUnit(${unit.id})" class="text-blue-500 hover:text-blue-700">Edit</button>
+                                <button onclick="deleteBusinessUnit(${unit.id})" class="text-red-500 hover:text-red-700">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadBusinessUnits() {
+            const selects = ['businessUnit', 'filterBusinessUnit'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    const currentValue = select.value;
+                    select.innerHTML = selectId === 'businessUnit' ? '<option value="">Pilih Unit Usaha</option>' : '<option value="">Semua Unit</option>';
+                    
+                    businessUnits.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.name;
+                        option.textContent = unit.name;
+                        select.appendChild(option);
+                    });
+                    
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        function loadExportBusinessUnits() {
+            const select = document.getElementById('exportBusinessUnit');
+            select.innerHTML = '<option value="">Semua Unit Usaha</option>';
+            
+            businessUnits.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.name;
+                option.textContent = unit.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Transaction form handling
+        function updateTransactionForm() {
+            const type = document.getElementById('transactionType').value;
+            const categorySelect = document.getElementById('category');
+            
+            categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
+            
+            const categories = type === 'Pemasukan' ? incomeCategories : expenseCategories;
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        function formatAmount(input) {
+            // Remove non-numeric characters except decimal point
+            let value = input.value.replace(/[^\d]/g, '');
+            input.value = value;
+        }
+
+        // Transaction form submission
+        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const loadingIcon = document.getElementById('loadingIcon');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Menyimpan...';
+            loadingIcon.classList.remove('hidden');
+            
+            setTimeout(() => {
+                const transactionData = {
+                    id: Date.now(),
+                    type: document.getElementById('transactionType').value,
+                    businessUnit: document.getElementById('businessUnit').value,
+                    amount: parseInt(document.getElementById('amount').value),
+                    date: document.getElementById('transactionDate').value,
+                    category: document.getElementById('category').value,
+                    description: document.getElementById('description').value,
+                    paymentMethod: document.getElementById('paymentMethod').value,
+                    referenceNumber: document.getElementById('referenceNumber').value,
+                    timestamp: new Date().toLocaleString('id-ID')
+                };
+                
+                // Add to transactions array
+                transactions.unshift(transactionData);
+                localStorage.setItem('bumdesTransactions', JSON.stringify(transactions));
+                
+                // Show success modal
+                showSuccessModal('Transaksi berhasil disimpan!');
+                
+                // Reset form
+                document.getElementById('transactionForm').reset();
+                document.getElementById('transactionDate').valueAsDate = new Date();
+                
+                // Reset button state
+                submitBtn.disabled = false;
+                submitText.textContent = 'Simpan Transaksi';
+                loadingIcon.classList.add('hidden');
+                
+                // Update displays
+                displayRecentTransactions();
+                updateFinancialSummary();
+                displayAllTransactions();
+                displayBusinessUnitReports();
+                updateDashboard();
+            }, 1500);
+        });
+
+        // Display functions
+        function displayRecentTransactions() {
+            const recentTransactions = document.getElementById('recentTransactions');
+            const transactionCount = document.getElementById('transactionCount');
+            
+            transactionCount.textContent = `${transactions.length} Transaksi`;
+            
+            if (transactions.length === 0) {
+                recentTransactions.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                        <p>Belum ada transaksi</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            recentTransactions.innerHTML = transactions.slice(0, 5).map(transaction => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block w-3 h-3 rounded-full mr-2 ${
+                                    transaction.type === 'Pemasukan' ? 'bg-green-500' : 'bg-red-500'
+                                }"></span>
+                                <h4 class="font-medium text-gray-900">${transaction.description}</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">${transaction.businessUnit} • ${transaction.category}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="${transaction.type === 'Pemasukan' ? 'text-green-600' : 'text-red-600'} text-lg font-semibold">
+                                ${transaction.type === 'Pemasukan' ? '+' : '-'}${formatCurrency(transaction.amount)}
+                            </p>
+                            <p class="text-xs text-gray-500">${transaction.paymentMethod}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>${new Date(transaction.date).toLocaleDateString('id-ID')}</span>
+                        <span>${transaction.referenceNumber || 'Tanpa referensi'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayAllTransactions() {
+            const allTransactions = document.getElementById('allTransactions');
+            
+            let filteredTransactions = [...transactions];
+            
+            // Apply filters
+            const businessUnitFilter = document.getElementById('filterBusinessUnit')?.value;
+            const typeFilter = document.getElementById('filterType')?.value;
+            
+            if (businessUnitFilter) {
+                filteredTransactions = filteredTransactions.filter(t => t.businessUnit === businessUnitFilter);
+            }
+            
+            if (typeFilter) {
+                filteredTransactions = filteredTransactions.filter(t => t.type === typeFilter);
+            }
+            
+            if (filteredTransactions.length === 0) {
+                allTransactions.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <p>Tidak ada transaksi sesuai filter</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            allTransactions.innerHTML = filteredTransactions.map(transaction => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block w-3 h-3 rounded-full mr-2 ${
+                                    transaction.type === 'Pemasukan' ? 'bg-green-500' : 'bg-red-500'
+                                }"></span>
+                                <h4 class="font-medium text-gray-900">${transaction.description}</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">${transaction.businessUnit} • ${transaction.category}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="${transaction.type === 'Pemasukan' ? 'text-green-600' : 'text-red-600'} text-lg font-semibold">
+                                ${transaction.type === 'Pemasukan' ? '+' : '-'}${formatCurrency(transaction.amount)}
+                            </p>
+                            <p class="text-xs text-gray-500">${transaction.paymentMethod}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>${new Date(transaction.date).toLocaleDateString('id-ID')}</span>
+                        <span>${transaction.referenceNumber || 'Tanpa referensi'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterTransactions() {
+            displayAllTransactions();
+        }
+
+        function updateFinancialSummary() {
+            const totalIncome = transactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = transactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+            const balance = totalIncome - totalExpense;
+            
+            document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+            document.getElementById('totalExpense').textContent = formatCurrency(totalExpense);
+            document.getElementById('balance').textContent = formatCurrency(balance);
+            document.getElementById('totalBusinessUnits').textContent = businessUnits.length;
+            
+            // Update balance color
+            const balanceElement = document.getElementById('balance');
+            balanceElement.className = `text-xl font-semibold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`;
+        }
+
+        function displayBusinessUnitReports() {
+            const businessUnitReports = document.getElementById('businessUnitReports');
+            
+            if (businessUnits.length === 0) {
+                businessUnitReports.innerHTML = '<p class="text-gray-500">Belum ada unit usaha</p>';
+                return;
+            }
+            
+            businessUnitReports.innerHTML = businessUnits.map(unit => {
+                const unitTransactions = transactions.filter(t => t.businessUnit === unit.name);
+                const income = unitTransactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+                const expense = unitTransactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+                const balance = income - expense;
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-medium text-gray-900">${unit.name}</h4>
+                            <span class="text-sm text-gray-500">${unitTransactions.length} transaksi</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Pemasukan:</span>
+                                <div class="font-medium text-green-600">${formatCurrency(income)}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Pengeluaran:</span>
+                                <div class="font-medium text-red-600">${formatCurrency(expense)}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Saldo:</span>
+                                <div class="font-medium ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}">${formatCurrency(balance)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateDashboard() {
+            // Monthly statistics
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            const monthlyTransactions = transactions.filter(t => {
+                const transactionDate = new Date(t.date);
+                return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+            });
+            
+            const monthlyIncome = monthlyTransactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+            const monthlyExpense = monthlyTransactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+            const monthlyBalance = monthlyIncome - monthlyExpense;
+            
+            document.getElementById('monthlyIncome').textContent = formatCurrency(monthlyIncome);
+            document.getElementById('monthlyExpense').textContent = formatCurrency(monthlyExpense);
+            document.getElementById('monthlyBalance').textContent = formatCurrency(monthlyBalance);
+            
+            // Active business units
+            const activeUnits = businessUnits.filter(unit => unit.status === 'Aktif');
+            const activeBusinessUnitsElement = document.getElementById('activeBusinessUnits');
+            
+            if (activeUnits.length === 0) {
+                activeBusinessUnitsElement.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada unit usaha aktif</p>';
+            } else {
+                activeBusinessUnitsElement.innerHTML = activeUnits.slice(0, 5).map(unit => `
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-sm text-gray-700">${unit.name}</span>
+                        <span class="text-xs text-green-600">Aktif</span>
+                    </div>
+                `).join('');
+            }
+            
+            // Recent activity
+            const recentActivityElement = document.getElementById('recentActivity');
+            const recentTransactions = transactions.slice(0, 5);
+            
+            if (recentTransactions.length === 0) {
+                recentActivityElement.innerHTML = '<p class="text-gray-500">Belum ada aktivitas</p>';
+            } else {
+                recentActivityElement.innerHTML = recentTransactions.map(transaction => `
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-gray-700">${transaction.description.substring(0, 20)}...</span>
+                        <span class="${transaction.type === 'Pemasukan' ? 'text-green-600' : 'text-red-600'} text-xs">
+                            ${transaction.type === 'Pemasukan' ? '+' : '-'}${formatCurrency(transaction.amount)}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Export functions
+        function getFilteredData() {
+            let filteredTransactions = [...transactions];
+            
+            // Apply business unit filter
+            const businessUnitFilter = document.getElementById('exportBusinessUnit').value;
+            if (businessUnitFilter) {
+                filteredTransactions = filteredTransactions.filter(t => t.businessUnit === businessUnitFilter);
+            }
+            
+            // Apply period filter
+            const periodFilter = document.getElementById('exportPeriod').value;
+            const today = new Date();
+            
+            switch (periodFilter) {
+                case 'thisMonth':
+                    filteredTransactions = filteredTransactions.filter(t => {
+                        const transactionDate = new Date(t.date);
+                        return transactionDate.getMonth() === today.getMonth() && 
+                               transactionDate.getFullYear() === today.getFullYear();
+                    });
+                    break;
+                case 'lastMonth':
+                    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    filteredTransactions = filteredTransactions.filter(t => {
+                        const transactionDate = new Date(t.date);
+                        return transactionDate.getMonth() === lastMonth.getMonth() && 
+                               transactionDate.getFullYear() === lastMonth.getFullYear();
+                    });
+                    break;
+                case 'thisYear':
+                    filteredTransactions = filteredTransactions.filter(t => {
+                        const transactionDate = new Date(t.date);
+                        return transactionDate.getFullYear() === today.getFullYear();
+                    });
+                    break;
+                case 'custom':
+                    const startDate = document.getElementById('exportStartDate').value;
+                    const endDate = document.getElementById('exportEndDate').value;
+                    if (startDate && endDate) {
+                        filteredTransactions = filteredTransactions.filter(t => {
+                            return t.date >= startDate && t.date <= endDate;
+                        });
+                    }
+                    break;
+            }
+            
+            return filteredTransactions;
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const filteredTransactions = getFilteredData();
+            const includeTransactions = document.getElementById('exportTransactions').checked;
+            const includeSummary = document.getElementById('exportSummary').checked;
+            const includeBusinessUnits = document.getElementById('exportBusinessUnits').checked;
+            
+            // Header
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUMDES - Laporan Keuangan', 20, 20);
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Tanggal Export: ${new Date().toLocaleDateString('id-ID')}`, 20, 30);
+            
+            let yPos = 45;
+            
+            // Summary
+            if (includeSummary) {
+                const totalIncome = filteredTransactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+                const totalExpense = filteredTransactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+                const balance = totalIncome - totalExpense;
+                
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text('Ringkasan Keuangan', 20, yPos);
+                yPos += 10;
+                
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Total Pemasukan: ${formatCurrency(totalIncome)}`, 25, yPos);
+                yPos += 6;
+                doc.text(`Total Pengeluaran: ${formatCurrency(totalExpense)}`, 25, yPos);
+                yPos += 6;
+                doc.text(`Saldo: ${formatCurrency(balance)}`, 25, yPos);
+                yPos += 15;
+            }
+            
+            // Business Units
+            if (includeBusinessUnits) {
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text('Unit Usaha', 20, yPos);
+                yPos += 10;
+                
+                businessUnits.forEach(unit => {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${unit.name}`, 25, yPos);
+                    doc.setFont(undefined, 'normal');
+                    yPos += 5;
+                    doc.text(`Deskripsi: ${unit.description}`, 30, yPos);
+                    yPos += 5;
+                    doc.text(`PJ: ${unit.manager} | Status: ${unit.status}`, 30, yPos);
+                    yPos += 8;
+                });
+                yPos += 10;
+            }
+            
+            // Transactions
+            if (includeTransactions && filteredTransactions.length > 0) {
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text('Transaksi', 20, yPos);
+                yPos += 10;
+                
+                filteredTransactions.forEach((transaction, index) => {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${index + 1}. ${transaction.description}`, 20, yPos);
+                    doc.setFont(undefined, 'normal');
+                    yPos += 5;
+                    doc.text(`${transaction.businessUnit} | ${transaction.category}`, 25, yPos);
+                    yPos += 4;
+                    doc.text(`${transaction.type}: ${formatCurrency(transaction.amount)}`, 25, yPos);
+                    yPos += 4;
+                    doc.text(`Tanggal: ${new Date(transaction.date).toLocaleDateString('id-ID')} | ${transaction.paymentMethod}`, 25, yPos);
+                    yPos += 8;
+                });
+            }
+            
+            doc.save(`Laporan_Keuangan_BUMDES_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        function exportToExcel() {
+            const filteredTransactions = getFilteredData();
+            const includeTransactions = document.getElementById('exportTransactions').checked;
+            const includeSummary = document.getElementById('exportSummary').checked;
+            const includeBusinessUnits = document.getElementById('exportBusinessUnits').checked;
+            
+            const wb = XLSX.utils.book_new();
+            
+            // Summary Sheet
+            if (includeSummary) {
+                const totalIncome = filteredTransactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+                const totalExpense = filteredTransactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+                const balance = totalIncome - totalExpense;
+                
+                const summaryData = [
+                    ['BUMDES - Ringkasan Keuangan'],
+                    ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
+                    [''],
+                    ['Total Pemasukan', totalIncome],
+                    ['Total Pengeluaran', totalExpense],
+                    ['Saldo', balance],
+                    [''],
+                    ['Total Transaksi', filteredTransactions.length],
+                    ['Total Unit Usaha', businessUnits.length]
+                ];
+                
+                const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+                XLSX.utils.book_append_sheet(wb, summaryWs, 'Ringkasan');
+            }
+            
+            // Transactions Sheet
+            if (includeTransactions && filteredTransactions.length > 0) {
+                const transactionData = [
+                    ['Tanggal', 'Jenis', 'Unit Usaha', 'Kategori', 'Deskripsi', 'Jumlah', 'Metode Pembayaran', 'No. Referensi']
+                ];
+                
+                filteredTransactions.forEach(transaction => {
+                    transactionData.push([
+                        new Date(transaction.date).toLocaleDateString('id-ID'),
+                        transaction.type,
+                        transaction.businessUnit,
+                        transaction.category,
+                        transaction.description,
+                        transaction.amount,
+                        transaction.paymentMethod,
+                        transaction.referenceNumber || ''
+                    ]);
+                });
+                
+                const transactionWs = XLSX.utils.aoa_to_sheet(transactionData);
+                XLSX.utils.book_append_sheet(wb, transactionWs, 'Transaksi');
+            }
+            
+            // Business Units Sheet
+            if (includeBusinessUnits) {
+                const businessUnitData = [
+                    ['Nama Unit', 'Deskripsi', 'Penanggung Jawab', 'Anggaran', 'Status', 'Tanggal Dibuat']
+                ];
+                
+                businessUnits.forEach(unit => {
+                    businessUnitData.push([
+                        unit.name,
+                        unit.description,
+                        unit.manager,
+                        unit.budget,
+                        unit.status,
+                        unit.createdDate
+                    ]);
+                });
+                
+                const businessUnitWs = XLSX.utils.aoa_to_sheet(businessUnitData);
+                XLSX.utils.book_append_sheet(wb, businessUnitWs, 'Unit Usaha');
+            }
+            
+            XLSX.writeFile(wb, `Laporan_Keuangan_BUMDES_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        // Utility functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function showSuccessModal(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('successModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSuccessModal();
+            }
+        });
+
+        // User authentication system
+        let currentUser = null;
+        
+        const users = {
+            'admin': {
+                password: 'admin123',
+                role: 'Admin',
+                name: 'Administrator',
+                permissions: ['all']
+            },
+            'sembako': {
+                password: 'sembako123',
+                role: 'Kepala Unit',
+                name: 'Kepala Unit Sembako',
+                businessUnit: 'Warung Sembako',
+                permissions: ['input', 'view']
+            },
+            'simpan': {
+                password: 'simpan123',
+                role: 'Kepala Unit',
+                name: 'Kepala Unit Simpan Pinjam',
+                businessUnit: 'Simpan Pinjam',
+                permissions: ['input', 'view']
+            }
+        };
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (users[username] && users[username].password === password) {
+                currentUser = {
+                    username: username,
+                    ...users[username]
+                };
+                
+                // Store session
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                // Show main app
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                
+                // Update UI based on user role
+                updateUIForUser();
+                
+                // Initialize app
+                loadBusinessUnits();
+                displayBusinessUnits();
+                updateFinancialSummary();
+                displayRecentTransactions();
+                displayAllTransactions();
+                displayBusinessUnitReports();
+                updateDashboard();
+                
+            } else {
+                alert('Username atau password salah!');
+            }
+        });
+
+        // Check if user is already logged in
+        function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                updateUIForUser();
+            }
+        }
+
+        // Update UI based on user permissions
+        function updateUIForUser() {
+            if (!currentUser) return;
+            
+            // Update header info
+            document.getElementById('userRole').textContent = currentUser.role;
+            document.getElementById('userName').textContent = currentUser.name;
+            
+            // Show/hide admin panel button
+            if (currentUser.permissions.includes('all')) {
+                document.getElementById('adminPanelBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('adminPanelBtn').classList.add('hidden');
+            }
+            
+            // Filter business units for unit heads
+            if (currentUser.role === 'Kepala Unit') {
+                filterBusinessUnitForUser();
+            }
+        }
+
+        // Filter business unit dropdown for unit heads
+        function filterBusinessUnitForUser() {
+            if (currentUser.role === 'Kepala Unit') {
+                const businessUnitSelect = document.getElementById('businessUnit');
+                businessUnitSelect.innerHTML = `<option value="${currentUser.businessUnit}">${currentUser.businessUnit}</option>`;
+                businessUnitSelect.value = currentUser.businessUnit;
+                businessUnitSelect.disabled = true;
+            }
+        }
+
+        // Override loadBusinessUnits for unit heads
+        function loadBusinessUnits() {
+            if (currentUser && currentUser.role === 'Kepala Unit') {
+                filterBusinessUnitForUser();
+                return;
+            }
+            
+            const selects = ['businessUnit', 'filterBusinessUnit'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    const currentValue = select.value;
+                    select.innerHTML = selectId === 'businessUnit' ? '<option value="">Pilih Unit Usaha</option>' : '<option value="">Semua Unit</option>';
+                    
+                    businessUnits.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.name;
+                        option.textContent = unit.name;
+                        select.appendChild(option);
+                    });
+                    
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        // Override admin functions to check permissions
+        function addBusinessUnit() {
+            if (!currentUser || !currentUser.permissions.includes('all')) {
+                alert('Anda tidak memiliki akses untuk menambah unit usaha!');
+                return;
+            }
+            
+            const name = document.getElementById('newUnitName').value.trim();
+            const description = document.getElementById('newUnitDescription').value.trim();
+            const manager = document.getElementById('newUnitManager').value.trim();
+            const budget = parseInt(document.getElementById('newUnitBudget').value) || 0;
+            const status = document.getElementById('newUnitStatus').value;
+
+            if (!name || !description || !manager) {
+                alert('Mohon lengkapi nama unit usaha, deskripsi, dan penanggung jawab');
+                return;
+            }
+
+            const newUnit = {
+                id: Date.now(),
+                name: name,
+                description: description,
+                manager: manager,
+                budget: budget,
+                status: status,
+                createdDate: new Date().toLocaleDateString('id-ID')
+            };
+
+            businessUnits.push(newUnit);
+            localStorage.setItem('bumdesBusinessUnits', JSON.stringify(businessUnits));
+
+            // Clear form
+            document.getElementById('newUnitName').value = '';
+            document.getElementById('newUnitDescription').value = '';
+            document.getElementById('newUnitManager').value = '';
+            document.getElementById('newUnitBudget').value = '';
+            document.getElementById('newUnitStatus').value = 'Aktif';
+
+            // Refresh displays
+            loadBusinessUnits();
+            displayBusinessUnits();
+            updateFinancialSummary();
+            updateDashboard();
+
+            alert('Unit usaha berhasil ditambahkan!');
+        }
+
+        function deleteBusinessUnit(id) {
+            if (!currentUser || !currentUser.permissions.includes('all')) {
+                alert('Anda tidak memiliki akses untuk menghapus unit usaha!');
+                return;
+            }
+            
+            if (confirm('Yakin ingin menghapus unit usaha ini? Semua transaksi terkait akan tetap ada.')) {
+                businessUnits = businessUnits.filter(unit => unit.id !== id);
+                localStorage.setItem('bumdesBusinessUnits', JSON.stringify(businessUnits));
+                
+                loadBusinessUnits();
+                displayBusinessUnits();
+                updateFinancialSummary();
+                updateDashboard();
+            }
+        }
+
+        function editBusinessUnit(id) {
+            if (!currentUser || !currentUser.permissions.includes('all')) {
+                alert('Anda tidak memiliki akses untuk mengedit unit usaha!');
+                return;
+            }
+            
+            const unit = businessUnits.find(u => u.id === id);
+            if (unit) {
+                const newName = prompt('Nama Unit Usaha:', unit.name);
+                if (newName && newName.trim()) {
+                    unit.name = newName.trim();
+                    
+                    const newDescription = prompt('Deskripsi:', unit.description);
+                    if (newDescription && newDescription.trim()) {
+                        unit.description = newDescription.trim();
+                        
+                        const newManager = prompt('Penanggung Jawab:', unit.manager);
+                        if (newManager && newManager.trim()) {
+                            unit.manager = newManager.trim();
+                            
+                            localStorage.setItem('bumdesBusinessUnits', JSON.stringify(businessUnits));
+                            displayBusinessUnits();
+                            loadBusinessUnits();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Override displayBusinessUnits to show/hide admin controls
+        function displayBusinessUnits() {
+            const businessUnitsList = document.getElementById('businessUnitsList');
+            
+            if (businessUnits.length === 0) {
+                businessUnitsList.innerHTML = '<p class="text-gray-500 text-sm">Belum ada unit usaha</p>';
+                return;
+            }
+
+            const isAdmin = currentUser && currentUser.permissions.includes('all');
+
+            businessUnitsList.innerHTML = businessUnits.map(unit => {
+                const unitTransactions = transactions.filter(t => t.businessUnit === unit.name);
+                const totalIncome = unitTransactions.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + t.amount, 0);
+                const totalExpense = unitTransactions.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + t.amount, 0);
+                const balance = totalIncome - totalExpense;
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors ${unit.status === 'Tidak Aktif' ? 'opacity-75' : ''}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-900">${unit.name}</h4>
+                                <p class="text-sm text-gray-600">${unit.description}</p>
+                                <p class="text-sm text-gray-500">PJ: ${unit.manager}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="inline-block px-2 py-1 text-xs rounded-full ${
+                                    unit.status === 'Aktif' ? 'bg-green-100 text-green-800' :
+                                    unit.status === 'Tidak Aktif' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }">${unit.status}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4 text-sm mb-3">
+                            <div>
+                                <span class="text-gray-500">Anggaran:</span>
+                                <div class="font-medium">${formatCurrency(unit.budget)}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Pemasukan:</span>
+                                <div class="font-medium text-green-600">${formatCurrency(totalIncome)}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Saldo:</span>
+                                <div class="font-medium ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}">${formatCurrency(balance)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center text-xs text-gray-500">
+                            <span>Dibuat: ${unit.createdDate}</span>
+                            ${isAdmin ? `
+                                <div class="flex space-x-2">
+                                    <button onclick="editBusinessUnit(${unit.id})" class="text-blue-500 hover:text-blue-700 font-medium">Edit</button>
+                                    <button onclick="deleteBusinessUnit(${unit.id})" class="text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Override toggleAdminPanel to check permissions
+        function toggleAdminPanel() {
+            if (!currentUser || !currentUser.permissions.includes('all')) {
+                alert('Anda tidak memiliki akses ke panel admin!');
+                return;
+            }
+            
+            const adminPanel = document.getElementById('adminPanel');
+            const exportMenu = document.getElementById('exportMenu');
+            
+            adminPanel.classList.toggle('hidden');
+            exportMenu.classList.add('hidden');
+        }
+
+        // Filter transactions for unit heads
+        function displayRecentTransactions() {
+            const recentTransactions = document.getElementById('recentTransactions');
+            const transactionCount = document.getElementById('transactionCount');
+            
+            let filteredTransactions = [...transactions];
+            
+            // Filter for unit heads
+            if (currentUser && currentUser.role === 'Kepala Unit') {
+                filteredTransactions = filteredTransactions.filter(t => t.businessUnit === currentUser.businessUnit);
+            }
+            
+            transactionCount.textContent = `${filteredTransactions.length} Transaksi`;
+            
+            if (filteredTransactions.length === 0) {
+                recentTransactions.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                        <p>Belum ada transaksi</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            recentTransactions.innerHTML = filteredTransactions.slice(0, 5).map(transaction => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block w-3 h-3 rounded-full mr-2 ${
+                                    transaction.type === 'Pemasukan' ? 'bg-green-500' : 'bg-red-500'
+                                }"></span>
+                                <h4 class="font-medium text-gray-900">${transaction.description}</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">${transaction.businessUnit} • ${transaction.category}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="${transaction.type === 'Pemasukan' ? 'text-green-600' : 'text-red-600'} text-lg font-semibold">
+                                ${transaction.type === 'Pemasukan' ? '+' : '-'}${formatCurrency(transaction.amount)}
+                            </p>
+                            <p class="text-xs text-gray-500">${transaction.paymentMethod}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span>${new Date(transaction.date).toLocaleDateString('id-ID')}</span>
+                        <span>${transaction.referenceNumber || 'Tanpa referensi'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Yakin ingin keluar?')) {
+                currentUser = null;
+                sessionStorage.removeItem('currentUser');
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('loginForm').reset();
+            }
+        }
+
+        // Check session on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSession();
+            
+            if (!currentUser) {
+                // Initialize default data only if not logged in
+                loadBusinessUnits();
+                displayBusinessUnits();
+                updateFinancialSummary();
+                displayRecentTransactions();
+                displayAllTransactions();
+                displayBusinessUnitReports();
+                updateDashboard();
+            }
+            
+            // Set today's date
+            document.getElementById('transactionDate').valueAsDate = new Date();
+            
+            // Set up export period change handler
+            document.getElementById('exportPeriod').addEventListener('change', function() {
+                const customPeriod = document.getElementById('customPeriod');
+                if (this.value === 'custom') {
+                    customPeriod.classList.remove('hidden');
+                } else {
+                    customPeriod.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+    </div> <!-- End of mainApp -->
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ab142a911ffcef',t:'MTc1NzEzMTQzMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
